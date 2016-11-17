@@ -138,8 +138,8 @@ ECHO Hope this is correct...
 
 :: Check to make sure we have the right drive
 set users_dir=%target_drive%Users\
-IF NOT EXIST %users_dir% (
-	ECHO I don't believe the drive is correct because %users_dir% does not exist
+IF NOT EXIST "%users_dir%" (
+	ECHO I don't believe the drive is correct because "%users_dir%" does not exist
 	EXIT /B
 )
 
@@ -147,17 +147,17 @@ IF NOT EXIST %users_dir% (
 ECHO.
 ECHO.
 ECHO Users on this system are:
-DIR /b /AD %target_drive%Users\
+DIR /b /AD "%target_drive%Users\"
 ECHO.
 SET /p target_user="Which user is the target? (i.e. Donald): "
-ECHO Targeting user located at: %target_drive%Users\%target_user% 
+ECHO Targeting user located at: "%target_drive%Users\%target_user%"
 ECHO Hope this is correct...
 PAUSE
 
 :: Check to make sure we have the right user
 set target_user_dir=%users_dir%%target_user%
-IF NOT EXIST %target_user_dir% (
-	ECHO I don't believe the drive is correct because %target_user_dir% does not exist
+IF NOT EXIST "%target_user_dir%" (
+	ECHO I don't believe the drive is correct because "%target_user_dir%" does not exist
 	EXIT /B
 )
 
@@ -167,13 +167,13 @@ IF NOT EXIST %target_user_dir% (
 ::
 
 :: Grab IE Recovery information
-SET target_user_ie_recovery_dir=%target_user_dir%\AppData\Local\Microsoft\Internet Explorer\Recovery\Active
-CD %recovery_input_dir%
-ECHO Grabbing IE Recovery Files from %target_user_ie_recovery_dir% >> %run_log_file%
+SET target_user_ie_recovery_dir="%target_user_dir%\AppData\Local\Microsoft\Internet Explorer\Recovery\Active"
+CD "%recovery_input_dir%"
+ECHO Grabbing IE Recovery Files from "%target_user_ie_recovery_dir%" >> "%run_log_file%"
 ECHO Fetching IE recovery information
 COPY "%target_user_ie_recovery_dir%\R*.dat" .
 COPY "%target_user_ie_recovery_dir%\{*.dat" .
-%parse_rs% /d %recovery_input_dir% > %recovery_output_dir%\recovery_data.txt
+%parse_rs% /d "%recovery_input_dir%" > "%recovery_output_dir%\recovery_data.txt"
 ECHO.
 ECHO ParseRS bombs out occasionally, if an error appears above (other than permissions), you may want to redo this manually
 ECHO.
@@ -187,15 +187,15 @@ PAUSE
 ::Copy Registry hives
 ECHO Copying registry fies to input dir >> %run_log_file%
 ECHO Grabbing registry files
-CD %registry_input_dir%
+CD "%registry_input_dir%"
 DEL /Q *
-COPY %target_drive%Users\%target_user%\NTUSER.DAT .
-COPY %target_drive%Users\%target_user%\AppData\Local\Microsoft\Windows\UsrClass.dat .
-COPY %target_drive%Windows\System32\Config\DEFAULT .
-COPY %target_drive%Windows\System32\Config\SAM .
-COPY %target_drive%Windows\System32\Config\SECURITY .
-COPY %target_drive%Windows\System32\Config\SOFTWARE .
-COPY %target_drive%Windows\System32\Config\SYSTEM .
+COPY "%target_drive%Users\%target_user%\NTUSER.DAT" .
+COPY "%target_drive%Users\%target_user%\AppData\Local\Microsoft\Windows\UsrClass.dat" .
+COPY "%target_drive%Windows\System32\Config\DEFAULT" .
+COPY "%target_drive%Windows\System32\Config\SAM" .
+COPY "%target_drive%Windows\System32\Config\SECURITY" .
+COPY "%target_drive%Windows\System32\Config\SOFTWARE" .
+COPY "%target_drive%Windows\System32\Config\SYSTEM" .
 
 
 ::
@@ -208,7 +208,7 @@ IF EXIST UsrClass.dat (
 	ECHO "Ripping shellbags from %registry_input_dir%\UsrClass.dat" >> %run_log_file%
 	sbag UsrClass.dat -base10 -csv -timeformat hh:mm:ss -no_whitespace > %sbag_output_dir%\sbag.csv
 ) ELSE (
-	ECHO %registry_input_dir%\UsrClass.dat not found for shellbags >> %run_log_file%
+	ECHO "%registry_input_dir%\UsrClass.dat" not found for shellbags >> %run_log_file%
 )
 
 ::Do CAFAE work while we're here
@@ -219,7 +219,7 @@ IF EXIST NTUSER.DAT (
 	cafae -hive NTUSER.DAT -base10 -csv -timeformat hh:mm:ss -no_whitespace -opensave_mru > %cafae_output_dir%\save_mru.csv
 	cafae -hive NTUSER.DAT -base10 -csv -timeformat hh:mm:ss -no_whitespace -recent_docs > %cafae_output_dir%\recent_docs.csv
 ) ELSE (
-	ECHO %registry_input_dir%\NTUSER.DAT not found for CAFAE >> %run_log_file%
+	ECHO "%registry_input_dir%\NTUSER.DAT" not found for CAFAE >> %run_log_file%
 )
 
 ::Do CAFAE work while we're here
@@ -229,7 +229,7 @@ IF EXIST SYSTEM (
 	cafae -hive SYSTEM -base10 -csv -timeformat hh:mm:ss -no_whitespace -timezone > %cafae_output_dir%\timezone.csv
 	cafae -hive SYSTEM -base10 -csv -timeformat hh:mm:ss -no_whitespace -shimcache > %cafae_output_dir%\shimcache.csv
 ) ELSE (
-	ECHO %registry_input_dir%\SYSTEM not found for CAFAE >> %run_log_file%
+	ECHO "%registry_input_dir%\SYSTEM not found for CAFAE" >> %run_log_file%
 )
 
 ::
