@@ -124,7 +124,7 @@ MKDIR %recovery_output_dir%
 
 :: Find out where we're mounted
 ECHO.
-SET /p target_drive="Type the drive letter for the forensic image? (i.e. E:\): "
+SET /p target_drive="Type the drive letter for the forensic image (i.e. E:\): "
 ECHO Working from mounted image on: %target_drive% 
 ECHO Hope this is correct...
 
@@ -229,7 +229,11 @@ IF EXIST SYSTEM (
 ::
 ::
 
-REM ::Do RegRipper Work
+::Do RegRipper Work
+ECHO.
+ECHO About to run RegRipper, if this hangs you did not get the latest version. Download it from the dropbox and replace everything here: %regripper_dir%
+ECHO.
+PAUSE
 ECHO Entering RegRipper Directory: %regripper_dir%
 CD %regripper_dir%
 IF EXIST %registry_input_dir%\NTUSER.DAT (
