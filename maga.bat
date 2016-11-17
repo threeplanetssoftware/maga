@@ -133,8 +133,10 @@ IF NOT EXIST %users_dir% (
 
 :: Find out target user
 ECHO.
+ECHO.
 ECHO Users on this system are:
 DIR /b /AD %target_drive%[root]\Users\
+ECHO.
 SET /p target_user="Which user is the target? (i.e. Donald): "
 ECHO Targeting user located at: %target_drive%[root]\Users\%target_user% 
 ECHO Hope this is correct...
@@ -161,7 +163,9 @@ COPY "%target_user_ie_recovery_dir%\R*.dat" .
 COPY "%target_user_ie_recovery_dir%\{*.dat" .
 REM FOR %%F IN (R*.dat) DO "C:\Forensic Program Files\RecoverRS\ParseRS.exe" /r %recovery_input_dir%%%F > %recovery_output_dir%\%%F.txt
 "C:\Forensic Program Files\RecoverRS\ParseRS.exe" /d %recovery_input_dir% > %recovery_output_dir%\recovery_data.txt
+ECHO.
 ECHO ParseRS bombs out occasionally, if an error appears above (other than permissions), you may want to redo this manually
+ECHO.
 PAUSE
 
 ::
@@ -352,3 +356,4 @@ if "%launch_usb_forensics%" == "Y" (
 	ECHO Not kicking off USBDeviceForensics >> %run_log_file%
 	ECHO Not launching USBDeviceForensics
 )
+PAUSE
