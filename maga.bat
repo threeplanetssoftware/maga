@@ -125,11 +125,19 @@ MKDIR %recovery_output_dir%
 :: Find out where we're mounted
 ECHO.
 SET /p target_drive="Type the drive letter for the forensic image (i.e. E:\): "
+IF NOT "%target_drive%" == "C:\" (
+	SET target_drive=%target_drive%[root]\
+) ELSE (
+	ECHO.
+	ECHO I see you're checking the C:\ drive... this likely won't end well
+	ECHO.
+	PAUSE
+)
 ECHO Working from mounted image on: %target_drive% 
 ECHO Hope this is correct...
 
 :: Check to make sure we have the right drive
-set users_dir=%target_drive%[root]\Users\
+set users_dir=%target_drive%Users\
 IF NOT EXIST %users_dir% (
 	ECHO I don't believe the drive is correct because %users_dir% does not exist
 	EXIT /B
@@ -139,10 +147,10 @@ IF NOT EXIST %users_dir% (
 ECHO.
 ECHO.
 ECHO Users on this system are:
-DIR /b /AD %target_drive%[root]\Users\
+DIR /b /AD %target_drive%Users\
 ECHO.
 SET /p target_user="Which user is the target? (i.e. Donald): "
-ECHO Targeting user located at: %target_drive%[root]\Users\%target_user% 
+ECHO Targeting user located at: %target_drive%Users\%target_user% 
 ECHO Hope this is correct...
 PAUSE
 
@@ -181,13 +189,13 @@ ECHO Copying registry fies to input dir >> %run_log_file%
 ECHO Grabbing registry files
 CD %registry_input_dir%
 DEL /Q *
-COPY %target_drive%[root]\Users\%target_user%\NTUSER.DAT .
-COPY %target_drive%[root]\Users\%target_user%\AppData\Local\Microsoft\Windows\UsrClass.dat .
-COPY %target_drive%[root]\Windows\System32\Config\DEFAULT .
-COPY %target_drive%[root]\Windows\System32\Config\SAM .
-COPY %target_drive%[root]\Windows\System32\Config\SECURITY .
-COPY %target_drive%[root]\Windows\System32\Config\SOFTWARE .
-COPY %target_drive%[root]\Windows\System32\Config\SYSTEM .
+COPY %target_drive%Users\%target_user%\NTUSER.DAT .
+COPY %target_drive%Users\%target_user%\AppData\Local\Microsoft\Windows\UsrClass.dat .
+COPY %target_drive%Windows\System32\Config\DEFAULT .
+COPY %target_drive%Windows\System32\Config\SAM .
+COPY %target_drive%Windows\System32\Config\SECURITY .
+COPY %target_drive%Windows\System32\Config\SOFTWARE .
+COPY %target_drive%Windows\System32\Config\SYSTEM .
 
 
 ::
@@ -289,8 +297,8 @@ ECHO Entering Prefetch Dir: %prefetch_input_dir%
 CD %prefetch_input_dir%
 ::Clear out directory
 DEL /Q *.pf
-::Assuming E:\[root]\Windows\Prefetch\*.pf for prefetch
-COPY %target_drive%[root]\Windows\Prefetch\*.pf .
+::Assuming Windows\Prefetch\*.pf for prefetch
+COPY %target_drive%Windows\Prefetch\*.pf .
 DIR
 ECHO "Ripping Prefetch from %prefetch_input_dir%" >> %run_log_file%
 DIR *.pf /b | pf -pipe -csvl2t -timeformat hh:mm:ss -no_whitespace > %prefetch_output_dir%\prefetch-all.csv
@@ -307,8 +315,8 @@ ECHO Entering Automatic Destination Dir: %auto_dest_input_dir%
 CD %auto_dest_input_dir%
 ::Clear out directory
 DEL /Q *ions-ms
-::Assuming E:\[root]\Users\%target_user%\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations for prefetch
-COPY %target_drive%[root]\Users\%target_user%\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations\*ions-ms .
+::Assuming E:\Users\%target_user%\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations for prefetch
+COPY %target_drive%Users\%target_user%\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations\*ions-ms .
 DIR *ions-ms /b | jmp -pipe -csv -base10 -timeformat hh:mm:ss -no_whitespace > %jumplist_output_dir%\jump-auto.csv
 ECHO --Done with automatic jumplists >> %run_log_file%
 
@@ -318,8 +326,8 @@ ECHO Entering Custom Destination Dir: %cust_dest_input_dir%
 CD %cust_dest_input_dir%
 ::Clear out directory
 DEL /Q *ions-ms
-::Assuming E:\[root]\Users\%target_user%\AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations for prefetch
-COPY %target_drive%[root]\Users\%target_user%\AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations\*ions-ms .
+::Assuming E:\Users\%target_user%\AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations for prefetch
+COPY %target_drive%Users\%target_user%\AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations\*ions-ms .
 DIR *ions-ms /b | jmp -pipe -csv -base10 -timeformat hh:mm:ss -no_whitespace > %jumplist_output_dir%\jump-custom.csv
 ECHO --Done with custom jumplists >> %run_log_file%
 
@@ -332,10 +340,10 @@ ECHO --Done with custom jumplists >> %run_log_file%
 ECHO Copying files needed for USBDevice Forensics to %usb_output_dir%. Please run that tool!
 ECHO Copying USB fies to output dir >> %run_log_file%
 CD %usb_output_dir%
-COPY %target_drive%[root]\Windows\System32\Config\SYSTEM %usb_output_dir%
-COPY %target_drive%[root]\Windows\System32\Config\SOFTWARE %usb_output_dir%
-COPY %target_drive%[root]\Users\%target_user%\NTUSER.DAT %usb_output_dir%
-COPY %target_drive%[root]\Windows\Inf\setupapi.dev.log %usb_output_dir%
+COPY %target_drive%Windows\System32\Config\SYSTEM %usb_output_dir%
+COPY %target_drive%Windows\System32\Config\SOFTWARE %usb_output_dir%
+COPY %target_drive%Users\%target_user%\NTUSER.DAT %usb_output_dir%
+COPY %target_drive%Windows\Inf\setupapi.dev.log %usb_output_dir%
 
 ::
 ::
@@ -356,7 +364,9 @@ ECHO Successful Finish!
 SET /p launch_usb_forensics="Do you want to launch USB Device Forensics? (Y/N) "
 if "%launch_usb_forensics%" == "Y" (
 	ECHO Kicking off USBDeviceForensics >> %run_log_file%
-	ECHO Kicking off USBDeviceForensics for you
+	ECHO.
+	ECHO Kicking off USBDeviceForensics for you. Point it at the %usb_output_dir% folder to find all your files
+	ECHO.
 	PAUSE
 	%usb_device_forensics%
 ) ELSE (
