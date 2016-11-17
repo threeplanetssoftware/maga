@@ -196,6 +196,27 @@ IF EXIST UsrClass.dat (
 	ECHO %registry_input_dir%\UsrClass.dat not found for shellbags >> %run_log_file%
 )
 
+::Do CAFAE work while we're here
+IF EXIST NTUSER.DAT (
+	ECHO "Ripping CAFAE information from %registry_input_dir%\NTUSER.DAT" >> %run_log_file%
+	cafae -hive NTUSER.DAT -base10 -csv -timeformat hh:mm:ss -no_whitespace -userassist > %cafae_output_dir%\userassist.csv
+	cafae -hive NTUSER.DAT -base10 -csv -timeformat hh:mm:ss -no_whitespace -openrun_mru > %cafae_output_dir%\run_mru.csv
+	cafae -hive NTUSER.DAT -base10 -csv -timeformat hh:mm:ss -no_whitespace -opensave_mru > %cafae_output_dir%\save_mru.csv
+	cafae -hive NTUSER.DAT -base10 -csv -timeformat hh:mm:ss -no_whitespace -recent_docs > %cafae_output_dir%\recent_docs.csv
+) ELSE (
+	ECHO %registry_input_dir%\NTUSER.DAT not found for CAFAE >> %run_log_file%
+)
+
+::Do CAFAE work while we're here
+IF EXIST SYSTEM (
+	ECHO "Ripping CAFAE information from %registry_input_dir%\SYSTEM" >> %run_log_file%
+	cafae -hive SYSTEM -base10 -csv -timeformat hh:mm:ss -no_whitespace -devices > %cafae_output_dir%\devices.csv
+	cafae -hive SYSTEM -base10 -csv -timeformat hh:mm:ss -no_whitespace -timezone > %cafae_output_dir%\timezone.csv
+	cafae -hive SYSTEM -base10 -csv -timeformat hh:mm:ss -no_whitespace -shimcache > %cafae_output_dir%\shimcache.csv
+) ELSE (
+	ECHO %registry_input_dir%\SYSTEM not found for CAFAE >> %run_log_file%
+)
+
 ::
 ::
 ::
