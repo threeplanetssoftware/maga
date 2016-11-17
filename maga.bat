@@ -21,8 +21,8 @@ SET run_log_file=%start_dir%\run_log.txt
 SET error_log_file=%start_dir%\error_log.txt
 
 ::Input/output folders
-SET input_dir=C:\cases\maga\input
-SET output_dir=C:\cases\maga\output
+SET input_dir=%start_dir%\input
+SET output_dir=%start_dir%\output
 
 :: Registry Folders
 SET registry_input_dir=%input_dir%\registry
