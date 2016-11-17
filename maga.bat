@@ -27,7 +27,10 @@ SET output_dir=C:\cases\maga\output
 :: Registry Folders
 SET registry_input_dir=%input_dir%\registry
 SET registry_output_dir=%output_dir%\registry
-SET regripper_dir="C:\Forensic Program Files\Registry Tools\Registry Ripper 2.8"
+SET regripper_dir="C:\Forensic Program Files\Registry Tools\Registry Ripper"
+
+:: Cafae folders
+SET cafae_output_dir=%output_dir%\cafae
 
 :: Prefetch Folders
 SET prefetch_input_dir=%input_dir%\prefetch
@@ -45,7 +48,10 @@ SET usb_output_dir=%output_dir%\usb
 SET sbag_output_dir=%output_dir%\sbag
 
 ECHO ===Starting new MAGA run at %DATE% %TIME%=== >> %run_log_file%
-
+ECHO.
+ECHO ============================================
+ECHO         Make Analysis Great Again
+ECHO ============================================
 ECHO.
 ECHO    _____      _____    ________    _____   
 ECHO   /     \    /  _  \  /  _____/   /  _  \  
@@ -53,6 +59,10 @@ ECHO  /  \ /  \  /  /_\  \/   \  ___  /  /_\  \
 ECHO /    Y    \/    !    \    \_\  \/    !    \
 ECHO \____!__  /\____!__  /\______  /\____!__  /
 ECHO         \/         \/        \/         \/ 
+ECHO.
+ECHO ============================================
+ECHO         Make Analysis Great Again
+ECHO ============================================
 ECHO.
 
 :: Checking input dirs
@@ -98,12 +108,20 @@ MKDIR %prefetch_output_dir%
 MKDIR %registry_output_dir%
 MKDIR %sbag_output_dir%
 MKDIR %usb_output_dir%
+MKDIR %cafae_output_dir%
 
 :: Find out where we're mounted
 ECHO.
-SET /p target_drive="Which drive is the forensic image on? (i.e. E:\): "
+SET /p target_drive="Type the drive letter for the forensic image? (i.e. E:\): "
 ECHO Working from mounted image on: %target_drive% 
 ECHO Hope this is correct...
+
+:: Check to make sure we have the right drive
+set users_folder=%target_drive%[root]\Users\
+IF NOT EXIST %users_folder% (
+	ECHO I don't believe the drive is correct because %users_folder% does not exist
+	EXIT /B
+)
 
 :: Find out target user
 ECHO.
@@ -113,6 +131,13 @@ SET /p target_user="Which user is the target? (i.e. Donald): "
 ECHO Targeting user located at: %target_drive%[root]\Users\%target_user% 
 ECHO Hope this is correct...
 PAUSE
+
+:: Check to make sure we have the right user
+set target_user_folder=%users_folder%%target_user%
+IF NOT EXIST %target_user_folder% (
+	ECHO I don't believe the drive is correct because %target_user_folder% does not exist
+	EXIT /B
+)
 
 ::Copy Registry hives
 ECHO Copying registry fies to input dir >> %run_log_file%
