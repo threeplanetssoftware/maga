@@ -44,6 +44,10 @@ SET jumplist_output_dir=%output_dir%\jumplist
 :: USB Folders
 SET usb_output_dir=%output_dir%\usb
 
+:: IE Recovery Data
+SET recovery_input_dir=%input_dir%\recovery_store
+SET recovery_output_dir=%output_dir%\recovery_store
+
 :: SBAG Folders
 SET sbag_output_dir=%output_dir%\sbag
 
@@ -65,33 +69,30 @@ ECHO         Make Analysis Great Again
 ECHO ============================================
 ECHO.
 
+::
+::
+::
+::
+
 :: Checking input dirs
 ECHO Checking input directories
 ECHO Checking input directory: %input_dir% >> %run_log_file%
-IF NOT EXIST %input_dir% (
-	ECHO %input_dir% didn't exist, creating >> %run_log_file%
-	MKDIR %input_dir%
-)
 
-IF NOT EXIST %registry_input_dir% (
-	ECHO %registry_input_dir% didn't exist, creating >> %run_log_file%
-	MKDIR %registry_input_dir%
+:: Need to remove input dir
+ECHO Making input directories
+ECHO Removing input dir to rebuild >> %run_log_file%
+IF EXIST %input_dir% (
+	RMDIR /S /Q %input_dir%
 )
+MKDIR %input_dir%
 
-IF NOT EXIST %prefetch_input_dir% (
-	ECHO %prefetch_input_dir% didn't exist, creating >> %run_log_file%
-	MKDIR %prefetch_input_dir%
-)
-
-IF NOT EXIST %auto_dest_input_dir% (
-	ECHO %auto_dest_input_dir% didn't exist, creating >> %run_log_file%
-	MKDIR %auto_dest_input_dir%
-)
-
-IF NOT EXIST %cust_dest_input_dir% (
-	ECHO %cust_dest_input_dir% didn't exist, creating >> %run_log_file%
-	MKDIR %cust_dest_input_dir%
-)
+:: Need to create input dirs
+ECHO Creating input folders >> %run_log_file%
+MKDIR %prefetch_input_dir%
+MKDIR %registry_input_dir%
+MKDIR %auto_dest_input_dir%
+MKDIR %cust_dest_input_dir%
+MKDIR %recovery_input_dir%
 
 :: Need to remove output dir
 ECHO Making output directories
@@ -109,6 +110,13 @@ MKDIR %registry_output_dir%
 MKDIR %sbag_output_dir%
 MKDIR %usb_output_dir%
 MKDIR %cafae_output_dir%
+MKDIR %recovery_output_dir%
+
+
+::
+::
+::
+::
 
 :: Find out where we're mounted
 ECHO.
@@ -117,9 +125,9 @@ ECHO Working from mounted image on: %target_drive%
 ECHO Hope this is correct...
 
 :: Check to make sure we have the right drive
-set users_folder=%target_drive%[root]\Users\
-IF NOT EXIST %users_folder% (
-	ECHO I don't believe the drive is correct because %users_folder% does not exist
+set users_dir=%target_drive%[root]\Users\
+IF NOT EXIST %users_dir% (
+	ECHO I don't believe the drive is correct because %users_dir% does not exist
 	EXIT /B
 )
 
@@ -133,11 +141,33 @@ ECHO Hope this is correct...
 PAUSE
 
 :: Check to make sure we have the right user
-set target_user_folder=%users_folder%%target_user%
-IF NOT EXIST %target_user_folder% (
-	ECHO I don't believe the drive is correct because %target_user_folder% does not exist
+set target_user_dir=%users_dir%%target_user%
+IF NOT EXIST %target_user_dir% (
+	ECHO I don't believe the drive is correct because %target_user_dir% does not exist
 	EXIT /B
 )
+
+::
+::
+::
+::
+
+:: Grab IE Recovery information
+SET target_user_ie_recovery_dir=%target_user_dir%\AppData\Local\Microsoft\Internet Explorer\Recovery\Active
+CD %recovery_input_dir%
+ECHO Grabbing IE Recovery Files from %target_user_ie_recovery_dir% >> %run_log_file%
+ECHO Fetching IE recovery information
+COPY "%target_user_ie_recovery_dir%\R*.dat" .
+COPY "%target_user_ie_recovery_dir%\{*.dat" .
+REM FOR %%F IN (R*.dat) DO "C:\Forensic Program Files\RecoverRS\ParseRS.exe" /r %recovery_input_dir%%%F > %recovery_output_dir%\%%F.txt
+"C:\Forensic Program Files\RecoverRS\ParseRS.exe" /d %recovery_input_dir% > %recovery_output_dir%\recovery_data.txt
+ECHO ParseRS bombs out occasionally, if an error appears above (other than permissions), you may want to redo this manually
+PAUSE
+
+::
+::
+::
+::
 
 ::Copy Registry hives
 ECHO Copying registry fies to input dir >> %run_log_file%
@@ -152,6 +182,12 @@ COPY %target_drive%[root]\Windows\System32\Config\SECURITY .
 COPY %target_drive%[root]\Windows\System32\Config\SOFTWARE .
 COPY %target_drive%[root]\Windows\System32\Config\SYSTEM .
 
+
+::
+::
+::
+::
+
 ::Do SBAG work while we're here
 IF EXIST UsrClass.dat (
 	ECHO "Ripping shellbags from %registry_input_dir%\UsrClass.dat" >> %run_log_file%
@@ -159,6 +195,11 @@ IF EXIST UsrClass.dat (
 ) ELSE (
 	ECHO %registry_input_dir%\UsrClass.dat not found for shellbags >> %run_log_file%
 )
+
+::
+::
+::
+::
 
 REM ::Do RegRipper Work
 ECHO Entering RegRipper Directory: %regripper_dir%
@@ -205,6 +246,11 @@ IF EXIST %registry_input_dir%\UsrClass.dat (
 	ECHO %registry_input_dir%\UsrClass.dat not found >> %run_log_file%
 )
 
+::
+::
+::
+::
+
 ::Prefetch Work
 ECHO Working on prefetch >> %run_log_file%
 ECHO Entering Prefetch Dir: %prefetch_input_dir%
@@ -217,6 +263,11 @@ DIR
 ECHO "Ripping Prefetch from %prefetch_input_dir%" >> %run_log_file%
 DIR *.pf /b | pf -pipe -csvl2t -timeformat hh:mm:ss -no_whitespace > %prefetch_output_dir%\prefetch-all.csv
 ECHO --Done with prefetch >> %run_log_file%
+
+::
+::
+::
+::
 
 :: Jumplist Work
 ECHO Working on automatic jumplists >> %run_log_file%
@@ -240,6 +291,11 @@ COPY %target_drive%[root]\Users\%target_user%\AppData\Roaming\Microsoft\Windows\
 DIR *ions-ms /b | jmp -pipe -csv -base10 -timeformat hh:mm:ss -no_whitespace > %jumplist_output_dir%\jump-custom.csv
 ECHO --Done with custom jumplists >> %run_log_file%
 
+::
+::
+::
+::
+
 ::Copy USB files
 ECHO Copying files needed for USBDevice Forensics to %usb_output_dir%. Please run that tool!
 ECHO Copying USB fies to output dir >> %run_log_file%
@@ -249,11 +305,21 @@ COPY %target_drive%[root]\Windows\System32\Config\SOFTWARE %usb_output_dir%
 COPY %target_drive%[root]\Users\%target_user%\NTUSER.DAT %usb_output_dir%
 COPY %target_drive%[root]\Windows\Inf\setupapi.dev.log %usb_output_dir%
 
+::
+::
+::
+::
+
 ::Finish off the run
 CD %start_dir%
 ECHO Successful Finish!
 
 ::Concatenate all output?
+
+::
+::
+::
+::
 
 SET /p launch_usb_forensics="Do you want to launch USB Device Forensics? (Y/N) "
 if "%launch_usb_forensics%" == "Y" (
