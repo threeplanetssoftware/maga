@@ -14,6 +14,11 @@ SET target_user=
 SET target_drive=
 SET launch_usb_forensics=
 
+::Programs
+SET parse_rs="C:\Forensic Program Files\RecoverRS\ParseRS.exe"
+SET regripper_dir="C:\Forensic Program Files\Registry Tools\Registry Ripper"
+SET usb_device_forensics="C:\Forensic Program Files\Woanware\USBDeviceForensics.exe"
+
 ::Root level
 REM SET start_dir=C:\cases\maga
 SET start_dir=%CD%
@@ -27,7 +32,6 @@ SET output_dir=%start_dir%\output
 :: Registry Folders
 SET registry_input_dir=%input_dir%\registry
 SET registry_output_dir=%output_dir%\registry
-SET regripper_dir="C:\Forensic Program Files\Registry Tools\Registry Ripper"
 
 :: Cafae folders
 SET cafae_output_dir=%output_dir%\cafae
@@ -161,8 +165,7 @@ ECHO Grabbing IE Recovery Files from %target_user_ie_recovery_dir% >> %run_log_f
 ECHO Fetching IE recovery information
 COPY "%target_user_ie_recovery_dir%\R*.dat" .
 COPY "%target_user_ie_recovery_dir%\{*.dat" .
-REM FOR %%F IN (R*.dat) DO "C:\Forensic Program Files\RecoverRS\ParseRS.exe" /r %recovery_input_dir%%%F > %recovery_output_dir%\%%F.txt
-"C:\Forensic Program Files\RecoverRS\ParseRS.exe" /d %recovery_input_dir% > %recovery_output_dir%\recovery_data.txt
+%parse_rs% /d %recovery_input_dir% > %recovery_output_dir%\recovery_data.txt
 ECHO.
 ECHO ParseRS bombs out occasionally, if an error appears above (other than permissions), you may want to redo this manually
 ECHO.
@@ -351,7 +354,7 @@ if "%launch_usb_forensics%" == "Y" (
 	ECHO Kicking off USBDeviceForensics >> %run_log_file%
 	ECHO Kicking off USBDeviceForensics for you
 	PAUSE
-	"C:\Forensic Program Files\Woanware\USBDeviceForensics.exe"
+	%usb_device_forensics%
 ) ELSE (
 	ECHO Not kicking off USBDeviceForensics >> %run_log_file%
 	ECHO Not launching USBDeviceForensics
