@@ -78,6 +78,50 @@ ECHO.
 ::
 ::
 
+:: Find out where we're mounted
+ECHO.
+SET /p target_drive="Type the drive letter for the forensic image (i.e. E:\): "
+IF NOT "%target_drive%" == "C:\" (
+	SET target_drive=%target_drive%[root]\
+) ELSE (
+	ECHO.
+	ECHO I see you're checking the C:\ drive... this likely won't end well
+	ECHO.
+	PAUSE
+)
+ECHO Working from mounted image on: %target_drive% 
+ECHO Hope this is correct...
+
+:: Check to make sure we have the right drive
+set users_dir=%target_drive%Users\
+IF NOT EXIST "%users_dir%" (
+	ECHO I don't believe the drive is correct because "%users_dir%" does not exist
+	EXIT /B
+)
+
+:: Find out target user
+ECHO.
+ECHO.
+ECHO Users on this system are:
+DIR /b /AD "%target_drive%Users\"
+ECHO.
+SET /p target_user="Which user is the target? (i.e. Donald): "
+ECHO Targeting user located at: "%target_drive%Users\%target_user%"
+ECHO Hope this is correct... bee tee dubs, I'm about to remove the output folder (%output_dir%) so if you ran this before, save your files off
+PAUSE
+
+:: Check to make sure we have the right user
+set target_user_dir=%users_dir%%target_user%
+IF NOT EXIST "%target_user_dir%" (
+	ECHO I don't believe the drive is correct because "%target_user_dir%" does not exist
+	EXIT /B
+)
+
+::
+::
+::
+::
+
 :: Checking input dirs
 ECHO Checking input directories
 ECHO Checking input directory: %input_dir% >> %run_log_file%
@@ -116,50 +160,6 @@ MKDIR %usb_output_dir%
 MKDIR %cafae_output_dir%
 MKDIR %recovery_output_dir%
 
-
-::
-::
-::
-::
-
-:: Find out where we're mounted
-ECHO.
-SET /p target_drive="Type the drive letter for the forensic image (i.e. E:\): "
-IF NOT "%target_drive%" == "C:\" (
-	SET target_drive=%target_drive%[root]\
-) ELSE (
-	ECHO.
-	ECHO I see you're checking the C:\ drive... this likely won't end well
-	ECHO.
-	PAUSE
-)
-ECHO Working from mounted image on: %target_drive% 
-ECHO Hope this is correct...
-
-:: Check to make sure we have the right drive
-set users_dir=%target_drive%Users\
-IF NOT EXIST "%users_dir%" (
-	ECHO I don't believe the drive is correct because "%users_dir%" does not exist
-	EXIT /B
-)
-
-:: Find out target user
-ECHO.
-ECHO.
-ECHO Users on this system are:
-DIR /b /AD "%target_drive%Users\"
-ECHO.
-SET /p target_user="Which user is the target? (i.e. Donald): "
-ECHO Targeting user located at: "%target_drive%Users\%target_user%"
-ECHO Hope this is correct...
-PAUSE
-
-:: Check to make sure we have the right user
-set target_user_dir=%users_dir%%target_user%
-IF NOT EXIST "%target_user_dir%" (
-	ECHO I don't believe the drive is correct because "%target_user_dir%" does not exist
-	EXIT /B
-)
 
 ::
 ::
@@ -294,11 +294,11 @@ IF EXIST %registry_input_dir%\UsrClass.dat (
 ::Prefetch Work
 ECHO Working on prefetch >> %run_log_file%
 ECHO Entering Prefetch Dir: %prefetch_input_dir%
-CD %prefetch_input_dir%
+CD "%prefetch_input_dir%"
 ::Clear out directory
 DEL /Q *.pf
 ::Assuming Windows\Prefetch\*.pf for prefetch
-COPY %target_drive%Windows\Prefetch\*.pf .
+COPY "%target_drive%Windows\Prefetch\*.pf" .
 DIR
 ECHO "Ripping Prefetch from %prefetch_input_dir%" >> %run_log_file%
 DIR *.pf /b | pf -pipe -csvl2t -timeformat hh:mm:ss -no_whitespace > %prefetch_output_dir%\prefetch-all.csv
@@ -312,22 +312,22 @@ ECHO --Done with prefetch >> %run_log_file%
 :: Jumplist Work
 ECHO Working on automatic jumplists >> %run_log_file%
 ECHO Entering Automatic Destination Dir: %auto_dest_input_dir%
-CD %auto_dest_input_dir%
+CD "%auto_dest_input_dir%"
 ::Clear out directory
 DEL /Q *ions-ms
 ::Assuming E:\Users\%target_user%\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations for prefetch
-COPY %target_drive%Users\%target_user%\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations\*ions-ms .
+COPY "%target_drive%Users\%target_user%\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations\*ions-ms" .
 DIR *ions-ms /b | jmp -pipe -csv -base10 -timeformat hh:mm:ss -no_whitespace > %jumplist_output_dir%\jump-auto.csv
 ECHO --Done with automatic jumplists >> %run_log_file%
 
 :: Jumplist Work
 ECHO Working on custom jumplists >> %run_log_file%
 ECHO Entering Custom Destination Dir: %cust_dest_input_dir%
-CD %cust_dest_input_dir%
+CD "%cust_dest_input_dir%"
 ::Clear out directory
 DEL /Q *ions-ms
 ::Assuming E:\Users\%target_user%\AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations for prefetch
-COPY %target_drive%Users\%target_user%\AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations\*ions-ms .
+COPY "%target_drive%Users\%target_user%\AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations\*ions-ms" .
 DIR *ions-ms /b | jmp -pipe -csv -base10 -timeformat hh:mm:ss -no_whitespace > %jumplist_output_dir%\jump-custom.csv
 ECHO --Done with custom jumplists >> %run_log_file%
 
@@ -340,10 +340,10 @@ ECHO --Done with custom jumplists >> %run_log_file%
 ECHO Copying files needed for USBDevice Forensics to %usb_output_dir%. Please run that tool!
 ECHO Copying USB fies to output dir >> %run_log_file%
 CD %usb_output_dir%
-COPY %target_drive%Windows\System32\Config\SYSTEM %usb_output_dir%
-COPY %target_drive%Windows\System32\Config\SOFTWARE %usb_output_dir%
-COPY %target_drive%Users\%target_user%\NTUSER.DAT %usb_output_dir%
-COPY %target_drive%Windows\Inf\setupapi.dev.log %usb_output_dir%
+COPY "%target_drive%Windows\System32\Config\SYSTEM" %usb_output_dir%
+COPY "%target_drive%Windows\System32\Config\SOFTWARE" %usb_output_dir%
+COPY "%target_drive%Users\%target_user%\NTUSER.DAT" %usb_output_dir%
+COPY "%target_drive%Windows\Inf\setupapi.dev.log" %usb_output_dir%
 
 ::
 ::
