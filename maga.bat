@@ -55,6 +55,9 @@ SET recovery_output_dir=%output_dir%\recovery_store
 :: SBAG Folders
 SET sbag_output_dir=%output_dir%\sbag
 
+:: Event Log Folders
+SET evtx_output_dir=%output_dir%\event_logs
+
 ECHO ===Starting new MAGA run at %DATE% %TIME%=== >> %run_log_file%
 ECHO.
 ECHO ============================================
@@ -78,11 +81,17 @@ ECHO.
 ::
 ::
 
+ECHO.
+SET /p target_hostname="Type the hostname for the acquired media (i.e. ASGARD, or unknown): "
+ECHO Setting the target hostname to be %target_hostname%
+
 :: Find out where we're mounted
 ECHO.
 SET /p target_drive="Type the drive letter for the forensic image (i.e. E:\): "
 IF NOT "%target_drive%" == "C:\" (
-	SET target_drive=%target_drive%[root]\
+	IF EXIST %target_drive%[root] (
+		SET target_drive=%target_drive%[root]\
+	)
 ) ELSE (
 	ECHO.
 	ECHO I see you're checking the C:\ drive... this likely won't end well
@@ -159,7 +168,19 @@ MKDIR %sbag_output_dir%
 MKDIR %usb_output_dir%
 MKDIR %cafae_output_dir%
 MKDIR %recovery_output_dir%
+MKDIR %evtx_output_dir%
 
+::
+::
+::
+::
+
+::Event Log work
+ECHO Working on event logs >> %run_log_file%
+ECHO Attempting to pull event logs from %target_drive%
+evtwalk -partition %target_drive% -timeformat hh:mm:ss -csvl2t -no_whitespace > %evtx_output_dir%\event_logs.csv
+PAUSE
+ECHO --Done with event logs >> %run_log_file%
 
 ::
 ::
@@ -175,7 +196,7 @@ COPY "%target_user_ie_recovery_dir%\R*.dat" .
 COPY "%target_user_ie_recovery_dir%\{*.dat" .
 %parse_rs% /d "%recovery_input_dir%" > "%recovery_output_dir%\recovery_data.txt"
 ECHO.
-ECHO ParseRS bombs out occasionally, if an error appears above (other than permissions), you may want to redo this manually
+ECHO ParseRS bombs out if the file on the image is locked, if an error appears above (other than permissions), you may want to redo this manually by exporting
 ECHO.
 PAUSE
 
@@ -206,7 +227,7 @@ COPY "%target_drive%Windows\System32\Config\SYSTEM" .
 ::Do SBAG work while we're here
 IF EXIST UsrClass.dat (
 	ECHO "Ripping shellbags from %registry_input_dir%\UsrClass.dat" >> %run_log_file%
-	sbag UsrClass.dat -base10 -csv -timeformat hh:mm:ss -no_whitespace > %sbag_output_dir%\sbag.csv
+	sbag UsrClass.dat -base10 -csvl2t -timeformat hh:mm:ss -no_whitespace -hostname "%target_hostname%" -username "%target_user%" > %sbag_output_dir%\sbag.csv
 ) ELSE (
 	ECHO "%registry_input_dir%\UsrClass.dat" not found for shellbags >> %run_log_file%
 )
@@ -214,10 +235,10 @@ IF EXIST UsrClass.dat (
 ::Do CAFAE work while we're here
 IF EXIST NTUSER.DAT (
 	ECHO "Ripping CAFAE information from %registry_input_dir%\NTUSER.DAT" >> %run_log_file%
-	cafae -hive NTUSER.DAT -base10 -csv -timeformat hh:mm:ss -no_whitespace -userassist > %cafae_output_dir%\userassist.csv
-	cafae -hive NTUSER.DAT -base10 -csv -timeformat hh:mm:ss -no_whitespace -openrun_mru > %cafae_output_dir%\run_mru.csv
-	cafae -hive NTUSER.DAT -base10 -csv -timeformat hh:mm:ss -no_whitespace -opensave_mru > %cafae_output_dir%\save_mru.csv
-	cafae -hive NTUSER.DAT -base10 -csv -timeformat hh:mm:ss -no_whitespace -recent_docs > %cafae_output_dir%\recent_docs.csv
+	cafae -hive NTUSER.DAT -base10 -csvl2t -timeformat hh:mm:ss -no_whitespace -userassist -hostname "%target_hostname%"  -username "%target_user%" > %cafae_output_dir%\userassist.csv
+	cafae -hive NTUSER.DAT -base10 -csvl2t -timeformat hh:mm:ss -no_whitespace -openrun_mru -hostname "%target_hostname%"  -username "%target_user%" > %cafae_output_dir%\run_mru.csv
+	cafae -hive NTUSER.DAT -base10 -csvl2t -timeformat hh:mm:ss -no_whitespace -opensave_mru -hostname "%target_hostname%"  -username "%target_user%" > %cafae_output_dir%\save_mru.csv
+	cafae -hive NTUSER.DAT -base10 -csvl2t -timeformat hh:mm:ss -no_whitespace -recent_docs -hostname "%target_hostname%"  -username "%target_user%" > %cafae_output_dir%\recent_docs.csv
 ) ELSE (
 	ECHO "%registry_input_dir%\NTUSER.DAT" not found for CAFAE >> %run_log_file%
 )
@@ -225,9 +246,9 @@ IF EXIST NTUSER.DAT (
 ::Do CAFAE work while we're here
 IF EXIST SYSTEM (
 	ECHO "Ripping CAFAE information from %registry_input_dir%\SYSTEM" >> %run_log_file%
-	cafae -hive SYSTEM -base10 -csv -timeformat hh:mm:ss -no_whitespace -devices > %cafae_output_dir%\devices.csv
-	cafae -hive SYSTEM -base10 -csv -timeformat hh:mm:ss -no_whitespace -timezone > %cafae_output_dir%\timezone.csv
-	cafae -hive SYSTEM -base10 -csv -timeformat hh:mm:ss -no_whitespace -shimcache > %cafae_output_dir%\shimcache.csv
+	cafae -hive SYSTEM -base10 -csvl2t -timeformat hh:mm:ss -no_whitespace -devices -hostname "%target_hostname%"  > %cafae_output_dir%\devices.csv
+	cafae -hive SYSTEM -base10 -csvl2t -timeformat hh:mm:ss -no_whitespace -timezone -hostname "%target_hostname%"  > %cafae_output_dir%\timezone.csv
+	cafae -hive SYSTEM -base10 -csvl2t -timeformat hh:mm:ss -no_whitespace -shimcache -hostname "%target_hostname%"  > %cafae_output_dir%\shimcache.csv
 ) ELSE (
 	ECHO "%registry_input_dir%\SYSTEM not found for CAFAE" >> %run_log_file%
 )
@@ -301,7 +322,7 @@ DEL /Q *.pf
 COPY "%target_drive%Windows\Prefetch\*.pf" .
 DIR
 ECHO "Ripping Prefetch from %prefetch_input_dir%" >> %run_log_file%
-DIR *.pf /b | pf -pipe -csvl2t -timeformat hh:mm:ss -no_whitespace > %prefetch_output_dir%\prefetch-all.csv
+DIR *.pf /b | pf -pipe -csvl2t -timeformat hh:mm:ss -no_whitespace -hostname "%target_hostname%" > %prefetch_output_dir%\prefetch-all.csv
 ECHO --Done with prefetch >> %run_log_file%
 
 ::
@@ -317,7 +338,7 @@ CD "%auto_dest_input_dir%"
 DEL /Q *ions-ms
 ::Assuming E:\Users\%target_user%\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations for prefetch
 COPY "%target_drive%Users\%target_user%\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations\*ions-ms" .
-DIR *ions-ms /b | jmp -pipe -csv -base10 -timeformat hh:mm:ss -no_whitespace > %jumplist_output_dir%\jump-auto.csv
+DIR *ions-ms /b | jmp -pipe -csvl2t -base10 -timeformat hh:mm:ss -no_whitespace -hostname "%target_hostname%" -username "%target_user%" > %jumplist_output_dir%\jump-auto.csv
 ECHO --Done with automatic jumplists >> %run_log_file%
 
 :: Jumplist Work
@@ -328,8 +349,10 @@ CD "%cust_dest_input_dir%"
 DEL /Q *ions-ms
 ::Assuming E:\Users\%target_user%\AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations for prefetch
 COPY "%target_drive%Users\%target_user%\AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations\*ions-ms" .
-DIR *ions-ms /b | jmp -pipe -csv -base10 -timeformat hh:mm:ss -no_whitespace > %jumplist_output_dir%\jump-custom.csv
+DIR *ions-ms /b | jmp -pipe -csvl2t -base10 -timeformat hh:mm:ss -no_whitespace -hostname "%target_hostname%" -username "%target_user%" > %jumplist_output_dir%\jump-custom.csv
 ECHO --Done with custom jumplists >> %run_log_file%
+
+
 
 ::
 ::
