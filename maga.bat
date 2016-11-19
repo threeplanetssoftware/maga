@@ -29,7 +29,6 @@
 ::   https://github.com/threeplanetssoftware/
 ::
 :: To-do: 
-::   Concatenate output at the end
 ::   Check input folders to links to where files came from (jumplist)
 ::
 @ECHO OFF
@@ -133,7 +132,7 @@ IF NOT EXIST "%target_user_dir%" (
 ::Input/output folders
 SET input_dir=%start_dir%\input
 SET output_root_dir=%start_dir%\output
-SET output_dir="%output_root_dir%\%target_hostname%\%target_user%"
+SET output_dir=%output_root_dir%\%target_hostname%\%target_user%
 
 :: Registry Folders
 SET registry_input_dir=%input_dir%\registry
@@ -192,7 +191,8 @@ MKDIR %cust_dest_input_dir%
 MKDIR %recovery_input_dir%
 
 :: Need to remove and create output dir
-ECHO BTW, I'm about to remove the output folder (%output_dir%) so if you ran this before, save your files off
+ECHO BTW, I'm about to remove the output folder (%output_dir%)
+ECHO If you ran MAGA before on the same user, save your files off
 ECHO.
 PAUSE
 
@@ -200,26 +200,26 @@ PAUSE
 ECHO.
 ECHO Making output directories
 IF NOT EXIST %output_root_dir% (
-	MKDIR %output_root_dir%
+	MKDIR "%output_root_dir%"
 )
 
 :: Remove any previous runs for this user/hostname combination
 ECHO Removing output dir to rebuild >> %run_log_file%
-IF EXIST %output_dir% (
-	RMDIR /S /Q %output_dir%
+IF EXIST "%output_dir%" (
+	RMDIR /S /Q "%output_dir%"
 )
-MKDIR %output_dir%
+MKDIR "%output_dir%"
 
 :: Need to create output dirs
 ECHO Creating output folders >> %run_log_file%
-MKDIR %jumplist_output_dir%
-MKDIR %prefetch_output_dir%
-MKDIR %registry_output_dir%
-MKDIR %sbag_output_dir%
-MKDIR %usb_output_dir%
-MKDIR %cafae_output_dir%
-MKDIR %recovery_output_dir%
-MKDIR %evtx_output_dir%
+MKDIR "%jumplist_output_dir%"
+MKDIR "%prefetch_output_dir%"
+MKDIR "%registry_output_dir%"
+MKDIR "%sbag_output_dir%"
+MKDIR "%usb_output_dir%"
+MKDIR "%cafae_output_dir%"
+MKDIR "%recovery_output_dir%"
+MKDIR "%evtx_output_dir%"
 
 
 ::
@@ -232,8 +232,8 @@ MKDIR %evtx_output_dir%
 ECHO Working on prefetch >> %run_log_file%
 ECHO.
 ECHO Working on prefetch
-MKLINK /d %prefetch_output_dir%\link_to_originals "%target_drive%Windows\Prefetch\"
-DIR "%target_drive%Windows\Prefetch\*.pf" /b /s | pf -pipe -csvl2t -timeformat hh:mm:ss -no_whitespace -hostname "%target_hostname%" > %prefetch_output_dir%\prefetch-all.csv
+MKLINK /d "%prefetch_output_dir%\link_to_originals" "%target_drive%Windows\Prefetch\"
+DIR "%target_drive%Windows\Prefetch\*.pf" /b /s | pf -pipe -csvl2t -timeformat hh:mm:ss -no_whitespace -hostname "%target_hostname%" > "%prefetch_output_dir%\prefetch-all.csv"
 ECHO --Done with prefetch >> %run_log_file%
 ECHO Any "prob reading file" errors noted above are likely deleted files.
 ECHO. 
@@ -251,7 +251,7 @@ IF EXIST "%target_user_ie_recovery_dir%\*.dat" (
 	ECHO Grabbing IE Recovery Files from "%target_user_ie_recovery_dir%" >> "%run_log_file%"
 	ECHO.
 	ECHO Fetching IE recovery information
-	MKLINK /d %recovery_output_dir%\link_to_originals "%target_user_ie_recovery_dir%"
+	MKLINK /d "%recovery_output_dir%\link_to_originals" "%target_user_ie_recovery_dir%"
 	COPY "%target_user_ie_recovery_dir%\R*.dat" .
 	COPY "%target_user_ie_recovery_dir%\{*.dat" .
 	%parse_rs% /d "%recovery_input_dir%" > "%recovery_output_dir%\recovery_data.txt"
@@ -275,8 +275,8 @@ IF EXIST "%target_user_ie_recovery_dir%\*.dat" (
 ECHO.
 ECHO Working on event logs >> %run_log_file%
 ECHO Attempting to pull event logs from %target_drive%
-MKLINK /d %evtx_output_dir%\link_to_originals "%target_drive%Windows\System32\winevt\Logs\"
-DIR %target_drive%Windows\System32\winevt\Logs\*.evtx /b /s | evtwalk -pipe -timeformat hh:mm:ss -csvl2t -no_whitespace > %evtx_output_dir%\event_logs.csv
+MKLINK /d "%evtx_output_dir%\link_to_originals" "%target_drive%Windows\System32\winevt\Logs\"
+DIR "%target_drive%Windows\System32\winevt\Logs\*.evtx" /b /s | evtwalk -pipe -timeformat hh:mm:ss -csvl2t -no_whitespace > "%evtx_output_dir%\event_logs.csv"
 ECHO --Done with event logs >> %run_log_file%
 
 ::
@@ -286,13 +286,17 @@ ECHO --Done with event logs >> %run_log_file%
 ::
 
 :: Automatic jumplists
+ECHO.
+ECHO Working on jumplists
 SET target_user_auto_dest_dir=%target_drive%Users\%target_user%\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations
 ECHO Working on automatic jumplists >> %run_log_file%
 IF EXIST "%target_user_auto_dest_dir%" (
-	ECHO Entering Automatic Destination Dir: %auto_dest_input_dir%
-	CD "%auto_dest_input_dir%"
-	COPY "%target_user_auto_dest_dir%\*ions-ms" .
-	DIR *ions-ms /b | jmp -pipe -quiet -csvl2t -base10 -timeformat hh:mm:ss -no_whitespace -hostname "%target_hostname%" -username "%target_user%" > %jumplist_output_dir%\jump-auto.csv
+	ECHO Found automatic jumplists, checking them out
+	REM ECHO Entering Automatic Destination Dir: %auto_dest_input_dir%
+	REM CD "%auto_dest_input_dir%"
+	REM COPY "%target_user_auto_dest_dir%\*ions-ms" .
+	MKLINK /d "%jumplist_output_dir%\link_to_automatic_originals" "%target_user_auto_dest_dir%"
+	DIR "%target_user_auto_dest_dir%\*ions-ms" /b /s | jmp -pipe -quiet -csvl2t -base10 -timeformat hh:mm:ss -no_whitespace -hostname "%target_hostname%" -username "%target_user%" > "%jumplist_output_dir%\jump-auto.csv"
 ) ELSE (
 	ECHO Skipping automatic destinations as I don't believe they exist
 )
@@ -302,15 +306,32 @@ ECHO --Done with automatic jumplists >> %run_log_file%
 SET target_user_cust_dest_dir=%target_drive%Users\%target_user%\AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations
 ECHO Working on custom jumplists >> %run_log_file%
 IF EXIST "%target_user_cust_dest_dir%" (
-	ECHO Entering Custom Destination Dir: %cust_dest_input_dir%
-	CD "%cust_dest_input_dir%"
-	COPY "%target_user_cust_dest_dir%\*ions-ms" .
-	DIR *ions-ms /b | jmp -pipe -quiet -csvl2t -base10 -timeformat hh:mm:ss -no_whitespace -hostname "%target_hostname%" -username "%target_user%" > %jumplist_output_dir%\jump-custom.csv
+	ECHO Found custom jumplists, checking them out
+	REM ECHO Entering Custom Destination Dir: %cust_dest_input_dir%
+	REM CD "%cust_dest_input_dir%"
+	REM COPY "%target_user_cust_dest_dir%\*ions-ms" .
+	MKLINK /d "%jumplist_output_dir%\link_to_custom_originals" "%target_user_cust_dest_dir%"
+	DIR "%target_user_cust_dest_dir%\*ions-ms" /b /s | jmp -pipe -quiet -csvl2t -base10 -timeformat hh:mm:ss -no_whitespace -hostname "%target_hostname%" -username "%target_user%" > "%jumplist_output_dir%\jump-custom.csv"
 ) ELSE (
 	ECHO Skipping custom destinations as I don't believe they exist
 )
 ECHO --Done with custom jumplists >> %run_log_file%
 
+
+::
+::
+:: USB work
+::
+::
+
+::Copy USB files
+ECHO Copying files needed for USBDevice Forensics to %usb_output_dir%.
+ECHO Please run that tool at the end!
+ECHO Copying USB fies to output dir >> %run_log_file%
+COPY "%target_drive%Windows\System32\Config\SYSTEM" "%usb_output_dir%"
+COPY "%target_drive%Windows\System32\Config\SOFTWARE" "%usb_output_dir%"
+COPY "%target_drive%Users\%target_user%\NTUSER.DAT" "%usb_output_dir%"
+COPY "%target_drive%Windows\Inf\setupapi.dev.log" "%usb_output_dir%"
 
 ::
 ::
@@ -323,7 +344,6 @@ ECHO Copying registry fies to input dir >> %run_log_file%
 ECHO.
 ECHO Grabbing registry files
 CD "%registry_input_dir%"
-DEL /Q *
 COPY "%target_drive%Users\%target_user%\NTUSER.DAT" .
 COPY "%target_drive%Users\%target_user%\AppData\Local\Microsoft\Windows\UsrClass.dat" .
 COPY "%target_drive%Windows\System32\Config\DEFAULT" .
@@ -335,7 +355,7 @@ COPY "%target_drive%Windows\System32\Config\SYSTEM" .
 ::Do SBAG work while we're here
 IF EXIST UsrClass.dat (
 	ECHO "Ripping shellbags from %registry_input_dir%\UsrClass.dat" >> %run_log_file%
-	sbag UsrClass.dat -base10 -csvl2t -timeformat hh:mm:ss -no_whitespace -hostname "%target_hostname%" -username "%target_user%" > %sbag_output_dir%\sbag.csv
+	sbag UsrClass.dat -base10 -csvl2t -timeformat hh:mm:ss -no_whitespace -hostname "%target_hostname%" -username "%target_user%" > "%sbag_output_dir%\sbag.csv"
 ) ELSE (
 	ECHO "%registry_input_dir%\UsrClass.dat" not found for shellbags >> %run_log_file%
 )
@@ -344,10 +364,10 @@ IF EXIST UsrClass.dat (
 IF EXIST NTUSER.DAT (
 	ECHO "Ripping CAFAE information from %registry_input_dir%\NTUSER.DAT" >> %run_log_file%
 	:: Anyone actually reading this would be better served to use cafae's -all_user option to see even more
-	cafae -hive NTUSER.DAT -quiet -base10 -csvl2t -timeformat hh:mm:ss -no_whitespace -userassist -hostname "%target_hostname%"  -username "%target_user%" > %cafae_output_dir%\userassist.csv
-	cafae -hive NTUSER.DAT -quiet -base10 -csvl2t -timeformat hh:mm:ss -no_whitespace -openrun_mru -hostname "%target_hostname%"  -username "%target_user%" > %cafae_output_dir%\run_mru.csv
-	cafae -hive NTUSER.DAT -quiet -base10 -csvl2t -timeformat hh:mm:ss -no_whitespace -opensave_mru -hostname "%target_hostname%"  -username "%target_user%" > %cafae_output_dir%\save_mru.csv
-	cafae -hive NTUSER.DAT -quiet -base10 -csvl2t -timeformat hh:mm:ss -no_whitespace -recent_docs -hostname "%target_hostname%"  -username "%target_user%" > %cafae_output_dir%\recent_docs.csv
+	cafae -hive NTUSER.DAT -quiet -base10 -csvl2t -timeformat hh:mm:ss -no_whitespace -userassist -hostname "%target_hostname%"  -username "%target_user%" > "%cafae_output_dir%\userassist.csv"
+	cafae -hive NTUSER.DAT -quiet -base10 -csvl2t -timeformat hh:mm:ss -no_whitespace -openrun_mru -hostname "%target_hostname%"  -username "%target_user%" > "%cafae_output_dir%\run_mru.csv"
+	cafae -hive NTUSER.DAT -quiet -base10 -csvl2t -timeformat hh:mm:ss -no_whitespace -opensave_mru -hostname "%target_hostname%"  -username "%target_user%" > "%cafae_output_dir%\save_mru.csv"
+	cafae -hive NTUSER.DAT -quiet -base10 -csvl2t -timeformat hh:mm:ss -no_whitespace -recent_docs -hostname "%target_hostname%"  -username "%target_user%" > "%cafae_output_dir%\recent_docs.csv"
 ) ELSE (
 	ECHO "%registry_input_dir%\NTUSER.DAT" not found for CAFAE >> %run_log_file%
 )
@@ -356,9 +376,9 @@ IF EXIST NTUSER.DAT (
 IF EXIST SYSTEM (
 	ECHO "Ripping CAFAE information from %registry_input_dir%\SYSTEM" >> %run_log_file%
 	:: Anyone actually reading this would be better served to use cafae's -all_system option
-	cafae -hive SYSTEM -quiet -base10 -csvl2t -timeformat hh:mm:ss -no_whitespace -devices -hostname "%target_hostname%"  > %cafae_output_dir%\devices.csv
-	cafae -hive SYSTEM -quiet -base10 -csvl2t -timeformat hh:mm:ss -no_whitespace -timezone -hostname "%target_hostname%"  > %cafae_output_dir%\timezone.csv
-	cafae -hive SYSTEM -quiet -base10 -csvl2t -timeformat hh:mm:ss -no_whitespace -shimcache -hostname "%target_hostname%"  > %cafae_output_dir%\shimcache.csv
+	cafae -hive SYSTEM -quiet -base10 -csvl2t -timeformat hh:mm:ss -no_whitespace -devices -hostname "%target_hostname%"  > "%cafae_output_dir%\devices.csv"
+	cafae -hive SYSTEM -quiet -base10 -csvl2t -timeformat hh:mm:ss -no_whitespace -timezone -hostname "%target_hostname%"  > "%cafae_output_dir%\timezone.csv"
+	cafae -hive SYSTEM -quiet -base10 -csvl2t -timeformat hh:mm:ss -no_whitespace -shimcache -hostname "%target_hostname%"  > "%cafae_output_dir%\shimcache.csv"
 ) ELSE (
 	ECHO "%registry_input_dir%\SYSTEM not found for CAFAE" >> %run_log_file%
 )
@@ -369,46 +389,47 @@ ECHO About to run RegRipper, if this hangs you did not get the latest version.
 ECHO Download it from the dropbox and replace everything here: %regripper_dir%
 ECHO.
 PAUSE
+ECHO.
 ECHO Entering RegRipper Directory: %regripper_dir%
 CD %regripper_dir%
 IF EXIST %registry_input_dir%\NTUSER.DAT (
 	ECHO "Ripping NTUSER.DAT from %registry_input_dir%\NTUSER.DAT" >> %run_log_file%
-	rip.exe -r %registry_input_dir%\NTUSER.DAT -f ntuser > %registry_output_dir%\ntuser.txt
+	rip.exe -r "%registry_input_dir%\NTUSER.DAT" -f ntuser > "%registry_output_dir%\ntuser.txt"
 ) ELSE (
 	ECHO %registry_input_dir%\NTUSER.DAT not found >> %run_log_file%
 )
 
 IF EXIST %registry_input_dir%\SYSTEM (
 	ECHO "Ripping SYSTEM from %registry_input_dir%\SYSTEM" >> %run_log_file%
-	rip.exe -r %registry_input_dir%\SYSTEM -f system > %registry_output_dir%\system.txt
+	rip.exe -r "%registry_input_dir%\SYSTEM" -f system > "%registry_output_dir%\system.txt"
 ) ELSE (
 	ECHO %registry_input_dir%\SYSTEM not found >> %run_log_file%
 )
 
 IF EXIST %registry_input_dir%\SOFTWARE (
 	ECHO "Ripping SOFTWARE from %registry_input_dir%\SOFTWARE" >> %run_log_file%
-	rip.exe -r %registry_input_dir%\SOFTWARE -f software > %registry_output_dir%\software.txt
+	rip.exe -r "%registry_input_dir%\SOFTWARE -f software" > "%registry_output_dir%\software.txt"
 ) ELSE (
 	ECHO %registry_input_dir%\SOFTWARE not found >> %run_log_file%
 )
 
 IF EXIST %registry_input_dir%\SECURITY (
 	ECHO "Ripping SECURITY from %registry_input_dir%\SECURITY" >> %run_log_file%
-	rip.exe -r %registry_input_dir%\SECURITY -f security > %registry_output_dir%\security.txt
+	rip.exe -r "%registry_input_dir%\SECURITY" -f security > "%registry_output_dir%\security.txt"
 ) ELSE (
 	ECHO %registry_input_dir%\SECURITY not found >> %run_log_file%
 )
 
 IF EXIST %registry_input_dir%\SAM (
 	ECHO "Ripping SAM from %registry_input_dir%\SAM" >> %run_log_file%
-	rip.exe -r %registry_input_dir%\SAM -f sam > %registry_output_dir%\sam.txt
+	rip.exe -r "%registry_input_dir%\SAM" -f sam > "%registry_output_dir%\sam.txt"
 ) ELSE (
 	ECHO %registry_input_dir%\SAM not found >> %run_log_file%
 )
 
 IF EXIST %registry_input_dir%\UsrClass.dat (
 	ECHO "Ripping UsrClass.dat from %registry_input_dir%\UsrClass.dat" >> %run_log_file%
-	rip.exe -r %registry_input_dir%\UsrClass.dat -f usrclass > %registry_output_dir%\usrclass.txt
+	rip.exe -r "%registry_input_dir%\UsrClass.dat" -f usrclass > "%registry_output_dir%\usrclass.txt"
 ) ELSE (
 	ECHO %registry_input_dir%\UsrClass.dat not found >> %run_log_file%
 )
@@ -416,32 +437,19 @@ ECHO --Done with registries >> %run_log_file%
 
 ::
 ::
-:: USB work
-::
-::
-
-::Copy USB files
-ECHO Copying files needed for USBDevice Forensics to %usb_output_dir%. Please run that tool!
-ECHO Copying USB fies to output dir >> %run_log_file%
-CD %usb_output_dir%
-COPY "%target_drive%Windows\System32\Config\SYSTEM" %usb_output_dir%
-COPY "%target_drive%Windows\System32\Config\SOFTWARE" %usb_output_dir%
-COPY "%target_drive%Users\%target_user%\NTUSER.DAT" %usb_output_dir%
-COPY "%target_drive%Windows\Inf\setupapi.dev.log" %usb_output_dir%
-
-::
-::
+:: FINISH HIM
 ::
 ::
 
 ::Finish off the run
-CD %start_dir%
+CD "%start_dir%"
 ECHO.
 ECHO Successful Finish!
 ECHO.
 
 ::
 ::
+:: Prompt for and kick off USB Device Forensics
 ::
 ::
 
@@ -449,7 +457,8 @@ SET /p launch_usb_forensics="Do you want to launch USB Device Forensics? (Y/N) "
 if "%launch_usb_forensics%" == "Y" (
 	ECHO Kicking off USBDeviceForensics >> %run_log_file%
 	ECHO.
-	ECHO Kicking off USBDeviceForensics for you. Point it at the %usb_output_dir% folder to find all your files
+	ECHO Kicking off USBDeviceForensics for you and I copied the relevant files to:
+	ECHO "%usb_output_dir%"
 	ECHO.
 	%usb_device_forensics%
 ) ELSE (
