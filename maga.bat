@@ -28,6 +28,12 @@
 :: Author: Jon Baumann, Three Planets Software
 ::   https://github.com/threeplanetssoftware/
 ::
+:: To-do: 
+::   Concatenate output at the end
+::   Check into piping prefetch in to limit scroll
+::   Check input folders to links to where files came from
+::   Rename output to make unique folders
+::
 @ECHO OFF
 
 ::Initialize variables
@@ -99,6 +105,7 @@ ECHO.
 
 ::
 ::
+:: Set up the target space
 ::
 ::
 
