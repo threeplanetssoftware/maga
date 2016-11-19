@@ -30,9 +30,7 @@
 ::
 :: To-do: 
 ::   Concatenate output at the end
-::   Check into piping prefetch in to limit scroll
-::   Check input folders to links to where files came from
-::   Rename output to make unique folders
+::   Check input folders to links to where files came from (jumplist)
 ::
 @ECHO OFF
 
@@ -52,38 +50,11 @@ SET start_dir=%CD%
 SET run_log_file=%start_dir%\run_log.txt REM Logging could use some work, this was just enough for my ensuring the script worked
 SET error_log_file=%start_dir%\error_log.txt
 
-::Input/output folders
-SET input_dir=%start_dir%\input
-SET output_dir=%start_dir%\output
-
-:: Registry Folders
-SET registry_input_dir=%input_dir%\registry
-SET registry_output_dir=%output_dir%\registry
-
-:: Cafae folders
-SET cafae_output_dir=%output_dir%\cafae
-
-:: Prefetch Folders
-SET prefetch_input_dir=%input_dir%\prefetch
-SET prefetch_output_dir=%output_dir%\prefetch
-
-:: Jumplist Folders
-SET auto_dest_input_dir=%input_dir%\automatic_destinations
-SET cust_dest_input_dir=%input_dir%\custom_destinations
-SET jumplist_output_dir=%output_dir%\jumplist
-
-:: USB Folders
-SET usb_output_dir=%output_dir%\usb
-
-:: IE Recovery Data
-SET recovery_input_dir=%input_dir%\recovery_store
-SET recovery_output_dir=%output_dir%\recovery_store
-
-:: SBAG Folders
-SET sbag_output_dir=%output_dir%\sbag
-
-:: Event Log Folders
-SET evtx_output_dir=%output_dir%\event_logs
+::
+::
+:: Kick things off
+::
+::
 
 ECHO ===Starting new MAGA run at %DATE% %TIME%=== >> %run_log_file%
 ECHO.
@@ -146,9 +117,6 @@ ECHO.
 SET /p target_user="Which user is the target? (i.e. Donald): "
 ECHO.
 ECHO Targeting user located at: "%target_drive%Users\%target_user%"
-ECHO BTW, I'm about to remove the output folder (%output_dir%) so if you ran this before, save your files off
-ECHO.
-PAUSE
 
 :: Check to make sure we have the right user
 set target_user_dir=%users_dir%%target_user%
@@ -159,15 +127,55 @@ IF NOT EXIST "%target_user_dir%" (
 
 ::
 ::
+:: Establish vars
+::
+::
+::Input/output folders
+SET input_dir=%start_dir%\input
+SET output_root_dir=%start_dir%\output
+SET output_dir="%output_root_dir%\%target_hostname%\%target_user%"
+
+:: Registry Folders
+SET registry_input_dir=%input_dir%\registry
+SET registry_output_dir=%output_dir%\registry
+
+:: Cafae folders
+SET cafae_output_dir=%output_dir%\cafae
+
+:: Prefetch Folders
+SET prefetch_input_dir=%input_dir%\prefetch
+SET prefetch_output_dir=%output_dir%\prefetch
+
+:: Jumplist Folders
+SET auto_dest_input_dir=%input_dir%\automatic_destinations
+SET cust_dest_input_dir=%input_dir%\custom_destinations
+SET jumplist_output_dir=%output_dir%\jumplist
+
+:: USB Folders
+SET usb_output_dir=%output_dir%\usb
+
+:: IE Recovery Data
+SET recovery_input_dir=%input_dir%\recovery_store
+SET recovery_output_dir=%output_dir%\recovery_store
+
+:: SBAG Folders
+SET sbag_output_dir=%output_dir%\sbag
+
+:: Event Log Folders
+SET evtx_output_dir=%output_dir%\event_logs
+
+
+::
+::
 :: Prep work for directories
 ::
 ::
 
 :: Checking input dirs
-ECHO Checking input directories
 ECHO Checking input directory: %input_dir% >> %run_log_file%
 
 :: Need to remove and create input dir
+ECHO.
 ECHO Making input directories
 ECHO Removing input dir to rebuild >> %run_log_file%
 IF EXIST %input_dir% (
@@ -177,14 +185,25 @@ MKDIR %input_dir%
 
 :: Need to create input dirs
 ECHO Creating input folders >> %run_log_file%
-MKDIR %prefetch_input_dir%
+::MKDIR %prefetch_input_dir%
 MKDIR %registry_input_dir%
 MKDIR %auto_dest_input_dir%
 MKDIR %cust_dest_input_dir%
 MKDIR %recovery_input_dir%
 
 :: Need to remove and create output dir
+ECHO BTW, I'm about to remove the output folder (%output_dir%) so if you ran this before, save your files off
+ECHO.
+PAUSE
+
+:: Create the root output directory
+ECHO.
 ECHO Making output directories
+IF NOT EXIST %output_root_dir% (
+	MKDIR %output_root_dir%
+)
+
+:: Remove any previous runs for this user/hostname combination
 ECHO Removing output dir to rebuild >> %run_log_file%
 IF EXIST %output_dir% (
 	RMDIR /S /Q %output_dir%
@@ -202,17 +221,22 @@ MKDIR %cafae_output_dir%
 MKDIR %recovery_output_dir%
 MKDIR %evtx_output_dir%
 
+
 ::
 ::
-:: Event log forensics
+:: Prefetch work
 ::
 ::
 
-::Event Log work
-ECHO Working on event logs >> %run_log_file%
-ECHO Attempting to pull event logs from %target_drive%
-DIR %target_drive%Windows\System32\winevt\Logs\*.evtx /b /s | evtwalk -pipe -timeformat hh:mm:ss -csvl2t -no_whitespace > %evtx_output_dir%\event_logs.csv
-ECHO --Done with event logs >> %run_log_file%
+::Prefetch Work
+ECHO Working on prefetch >> %run_log_file%
+ECHO.
+ECHO Working on prefetch
+MKLINK /d %prefetch_output_dir%\link_to_originals "%target_drive%Windows\Prefetch\"
+DIR "%target_drive%Windows\Prefetch\*.pf" /b /s | pf -pipe -csvl2t -timeformat hh:mm:ss -no_whitespace -hostname "%target_hostname%" > %prefetch_output_dir%\prefetch-all.csv
+ECHO --Done with prefetch >> %run_log_file%
+ECHO Any "prob reading file" errors noted above are likely deleted files.
+ECHO. 
 
 ::
 ::
@@ -225,7 +249,9 @@ SET target_user_ie_recovery_dir=%target_user_dir%\AppData\Local\Microsoft\Intern
 CD "%recovery_input_dir%"
 IF EXIST "%target_user_ie_recovery_dir%\*.dat" (
 	ECHO Grabbing IE Recovery Files from "%target_user_ie_recovery_dir%" >> "%run_log_file%"
-	ECHO Fetching IE recovery information REM from "%target_user_ie_recovery_dir%"
+	ECHO.
+	ECHO Fetching IE recovery information
+	MKLINK /d %recovery_output_dir%\link_to_originals "%target_user_ie_recovery_dir%"
 	COPY "%target_user_ie_recovery_dir%\R*.dat" .
 	COPY "%target_user_ie_recovery_dir%\{*.dat" .
 	%parse_rs% /d "%recovery_input_dir%" > "%recovery_output_dir%\recovery_data.txt"
@@ -234,8 +260,57 @@ IF EXIST "%target_user_ie_recovery_dir%\*.dat" (
 	ECHO.
 	PAUSE
 ) ELSE (
+	ECHO.
 	ECHO Not pulling IE Recovery information as I don't think it exists
+	ECHO.
 )
+
+::
+::
+:: Event log forensics
+::
+::
+
+::Event Log work
+ECHO.
+ECHO Working on event logs >> %run_log_file%
+ECHO Attempting to pull event logs from %target_drive%
+MKLINK /d %evtx_output_dir%\link_to_originals "%target_drive%Windows\System32\winevt\Logs\"
+DIR %target_drive%Windows\System32\winevt\Logs\*.evtx /b /s | evtwalk -pipe -timeformat hh:mm:ss -csvl2t -no_whitespace > %evtx_output_dir%\event_logs.csv
+ECHO --Done with event logs >> %run_log_file%
+
+::
+::
+:: Jumplist work
+::
+::
+
+:: Automatic jumplists
+SET target_user_auto_dest_dir=%target_drive%Users\%target_user%\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations
+ECHO Working on automatic jumplists >> %run_log_file%
+IF EXIST "%target_user_auto_dest_dir%" (
+	ECHO Entering Automatic Destination Dir: %auto_dest_input_dir%
+	CD "%auto_dest_input_dir%"
+	COPY "%target_user_auto_dest_dir%\*ions-ms" .
+	DIR *ions-ms /b | jmp -pipe -quiet -csvl2t -base10 -timeformat hh:mm:ss -no_whitespace -hostname "%target_hostname%" -username "%target_user%" > %jumplist_output_dir%\jump-auto.csv
+) ELSE (
+	ECHO Skipping automatic destinations as I don't believe they exist
+)
+ECHO --Done with automatic jumplists >> %run_log_file%
+
+:: Custom jumplists
+SET target_user_cust_dest_dir=%target_drive%Users\%target_user%\AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations
+ECHO Working on custom jumplists >> %run_log_file%
+IF EXIST "%target_user_cust_dest_dir%" (
+	ECHO Entering Custom Destination Dir: %cust_dest_input_dir%
+	CD "%cust_dest_input_dir%"
+	COPY "%target_user_cust_dest_dir%\*ions-ms" .
+	DIR *ions-ms /b | jmp -pipe -quiet -csvl2t -base10 -timeformat hh:mm:ss -no_whitespace -hostname "%target_hostname%" -username "%target_user%" > %jumplist_output_dir%\jump-custom.csv
+) ELSE (
+	ECHO Skipping custom destinations as I don't believe they exist
+)
+ECHO --Done with custom jumplists >> %run_log_file%
+
 
 ::
 ::
@@ -245,6 +320,7 @@ IF EXIST "%target_user_ie_recovery_dir%\*.dat" (
 
 ::Copy Registry hives
 ECHO Copying registry fies to input dir >> %run_log_file%
+ECHO.
 ECHO Grabbing registry files
 CD "%registry_input_dir%"
 DEL /Q *
@@ -340,53 +416,6 @@ ECHO --Done with registries >> %run_log_file%
 
 ::
 ::
-:: Prefetch work
-::
-::
-
-::Prefetch Work
-ECHO Working on prefetch >> %run_log_file%
-ECHO Entering Prefetch Dir: %prefetch_input_dir%
-CD "%prefetch_input_dir%"
-COPY "%target_drive%Windows\Prefetch\*.pf" .
-ECHO "Ripping Prefetch from %prefetch_input_dir%" >> %run_log_file%
-DIR *.pf /b | pf -pipe -csvl2t -timeformat hh:mm:ss -no_whitespace -hostname "%target_hostname%" > %prefetch_output_dir%\prefetch-all.csv
-ECHO --Done with prefetch >> %run_log_file%
-
-::
-::
-:: Jumplist work
-::
-::
-
-:: Automatic jumplists
-SET target_user_auto_dest_dir=%target_drive%Users\%target_user%\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations
-ECHO Working on automatic jumplists >> %run_log_file%
-IF EXIST "%target_user_auto_dest_dir%" (
-	ECHO Entering Automatic Destination Dir: %auto_dest_input_dir%
-	CD "%auto_dest_input_dir%"
-	COPY "%target_user_auto_dest_dir%\*ions-ms" .
-	DIR *ions-ms /b | jmp -pipe -quiet -csvl2t -base10 -timeformat hh:mm:ss -no_whitespace -hostname "%target_hostname%" -username "%target_user%" > %jumplist_output_dir%\jump-auto.csv
-) ELSE (
-	ECHO Skipping automatic destinations as I don't believe they exist
-)
-ECHO --Done with automatic jumplists >> %run_log_file%
-
-:: Custom jumplists
-SET target_user_cust_dest_dir=%target_drive%Users\%target_user%\AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations
-ECHO Working on custom jumplists >> %run_log_file%
-IF EXIST "%target_user_cust_dest_dir%" (
-	ECHO Entering Custom Destination Dir: %cust_dest_input_dir%
-	CD "%cust_dest_input_dir%"
-	COPY "%target_user_cust_dest_dir%\*ions-ms" .
-	DIR *ions-ms /b | jmp -pipe -quiet -csvl2t -base10 -timeformat hh:mm:ss -no_whitespace -hostname "%target_hostname%" -username "%target_user%" > %jumplist_output_dir%\jump-custom.csv
-) ELSE (
-	ECHO Skipping custom destinations as I don't believe they exist
-)
-ECHO --Done with custom jumplists >> %run_log_file%
-
-::
-::
 :: USB work
 ::
 ::
@@ -410,7 +439,6 @@ CD %start_dir%
 ECHO.
 ECHO Successful Finish!
 ECHO.
-::Concatenate all output?
 
 ::
 ::
