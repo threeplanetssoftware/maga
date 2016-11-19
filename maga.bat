@@ -28,8 +28,6 @@
 :: Author: Jon Baumann, Three Planets Software
 ::   https://github.com/threeplanetssoftware/
 ::
-:: To-do: 
-::   Check input folders to links to where files came from (jumplist)
 ::
 @ECHO OFF
 
@@ -57,20 +55,34 @@ SET error_log_file=%start_dir%\error_log.txt
 
 ECHO ===Starting new MAGA run at %DATE% %TIME%=== >> %run_log_file%
 ECHO.
-ECHO ============================================
-ECHO         Make Analysis Great Again
-ECHO ============================================
+ECHO ==================================================
+ECHO             Make Analysis Great Again
+ECHO ==================================================
 ECHO.
-ECHO    _____      _____    ________    _____   
-ECHO   /     \    /  _  \  /  _____/   /  _  \  
-ECHO  /  \ /  \  /  /_\  \/   \  ___  /  /_\  \ 
-ECHO /    Y    \/    !    \    \_\  \/    !    \
-ECHO \____!__  /\____!__  /\______  /\____!__  /
-ECHO         \/         \/        \/         \/ 
+ECHO      _____      _____    ________    _____   
+ECHO     /     \    /  _  \  /  _____/   /  _  \  
+ECHO    /  \ /  \  /  /_\  \/   \  ___  /  /_\  \ 
+ECHO   /    Y    \/    !    \    \_\  \/    !    \
+ECHO   \____!__  /\____!__  /\______  /\____!__  /
+ECHO           \/         \/        \/         \/ 
 ECHO.
-ECHO ============================================
-ECHO         Make Analysis Great Again
-ECHO ============================================
+ECHO ==================================================
+ECHO             Make Analysis Great Again
+ECHO ==================================================
+ECHO.
+
+ECHO   MAGA is a quick script hacked together in SANS FOR408 
+ECHO   by Jon Baumann to automate some of the command line 
+ECHO   work for students not used to CLI. MAGA uses the common 
+ECHO   tools provided for FOR408, primarily those by tzworks due
+ECHO   to consistant output, good documentation, and ease of scripting.
+ECHO   MAGA is only to show the value of CLI, not to replace the 
+ECHO   knowledge of what the tools pull.
+ECHO.
+ECHO   Once run, your output is in a new folder created where this .bat
+ECHO   file is. Inside that you will find a folder for each device and user.
+ECHO.
+ECHO   For example: %start_dir%\output\ASGARD\Donald\cafae\
 ECHO.
 
 ::
