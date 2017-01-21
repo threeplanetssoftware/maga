@@ -127,6 +127,7 @@ ECHO Hope this is correct...
 set users_dir=%target_drive%Users\
 IF NOT EXIST "%users_dir%" (
 	ECHO I don't believe the drive is correct because "%users_dir%" does not exist
+	PAUSE
 	EXIT /B
 )
 
@@ -147,6 +148,7 @@ PAUSE
 set target_user_dir=%users_dir%%target_user%
 IF NOT EXIST "%target_user_dir%" (
 	ECHO I don't believe the drive is correct because "%target_user_dir%" does not exist
+	PAUSE
 	EXIT /B
 )
 
