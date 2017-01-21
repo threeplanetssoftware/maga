@@ -21,6 +21,8 @@ Jon Baumann, Three Planets Software (https://github.com/threeplanetssoftware/)
 # About
 MAGA is a quick script hacked together in SANS FOR408 to automate the vast majority of the command line work for students not used to CLI. It is not intended as a fully functional forensic suite, merely a tool to help demonstrate the types of information available for forensic analysts after using these command-line tools. MAGA uses the common tools provided for FOR408, primarily those by tzworks due to consistant output, good documentation, and ease of scripting.
 
+Note: This repository was named in jest during jokes about "building a firewall and making Russia pay for it" during a SANS FOR408 course. Any resemblence to political or trademarked slogans is just an interesting phenomenon. 
+
 # Requirements
 MAGA was made to be used with the SIFT Workstation provided in SANS FOR408 in 2016. Later versions which preserve a similar tool path will likely also work. The SIFT workstation version 2 from 2016 included a ridiculously outdated version of RegRipper which is unstable. Grab the newest version (https://github.com/keydet89/RegRipper2.8) and use that to replace everything in your RegRipper folder.
 
