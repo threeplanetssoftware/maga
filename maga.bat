@@ -25,7 +25,7 @@
 ::   tzworks due to consistant output, good documentation, 
 ::   and ease of scripting.
 ::
-:: Author: Jon Baumann, Three Planets Software
+:: Author: Jon Baumann, Ciofeca Forenics
 ::   https://github.com/threeplanetssoftware/
 ::
 ::
