@@ -16,7 +16,7 @@
 ```
 
 # Author
-Jon Baumann, Three Planets Software (https://github.com/threeplanetssoftware/)
+Jon Baumann, Ciofeca Forensics (https://github.com/threeplanetssoftware/)
 
 # About
 MAGA is a quick script hacked together in SANS FOR408 to automate the vast majority of the command line work for students not used to CLI. It is not intended as a fully functional forensic suite, merely a tool to help demonstrate the types of information available for forensic analysts after using these command-line tools. MAGA uses the common tools provided for FOR408, primarily those by tzworks due to consistant output, good documentation, and ease of scripting.
